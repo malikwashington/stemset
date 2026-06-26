@@ -1,0 +1,41 @@
+# =====================================================================
+# Copyrighted audio — NEVER commit.
+# Input masters are commercial recordings; output stems are derived
+# from them. This repo publishes only the CODE, config, and docs.
+# =====================================================================
+
+# All audio, in and out
+*.wav
+*.wave
+*.mp3
+*.flac
+*.aif
+*.aiff
+*.m4a
+*.ogg
+*.opus
+*.mid
+*.midi
+
+# Ableton sets (Stage 3 output, song-derived) and per-song output
+*.als
+*.als.bak
+out/
+**/stems/
+**/separated/
+res.txt
+
+# Separation models (large, auto-downloaded; cache lives off-repo)
+models/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.safetensors
+
+# Environment / local
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.claude/settings.local.json

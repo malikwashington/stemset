@@ -1,0 +1,82 @@
+# config.yaml — single source of truth for the separation pipeline.
+# Tier 2 ("per-stem best"): RoFormer for vocals/instrumental, Demucs for
+# drums/bass/other, DrumSep for the kit, RoFormer karaoke for lead/BGV.
+# Model filenames: "auto" resolves a current model from the installed backend's
+# registry. Run the backend with --list_models to see exact names and pin them.
+
+backend: auto            # auto | mlx | torch   (auto = MLX first on Apple Silicon)
+
+output:
+  format: WAV            # match your Ableton session
+  sample_rate: 44100     # match your Ableton session; don't use 96k for covers
+  bit_depth: 24          # all stems normalized to this (PCM_24) so they import uniformly
+  prune_intermediates: true   # delete Demucs residuals / pre-split files; keep only manifest stems
+  # Raw stems write straight to the external drive, one folder per song.
+  # separate.py appends a per-song subfolder under this dir.
+  dir: "/Volumes/MEW II/gig files/wedding band/stems"
+
+models:
+  # Persistent cache. Default backend dir is /tmp (clears on reboot!). Point this
+  # at your external drive — models are only needed during separation, not playback.
+  model_file_dir: "/Volumes/MEW\ II/stem-models"
+
+# --- Stage 2A: vocals / instrumental split (best vocals) -----------------------
+vocals_separation:
+  model: auto            # resolves to a Mel-Band / BS RoFormer
+
+# --- Stage 2B: drums / bass / synths (run on the RoFormer instrumental) --------
+instrumental_separation:
+  model: htdemucs_ft.yaml   # Demucs FT; best for drums/bass. "other" -> Synths. "auto" ok.
+
+# --- Stage 2B2: guitar / piano harvest (6-source Demucs on the instrumental) ----
+# Runs htdemucs_6s to pull Guitar + Piano out as their own stems when present.
+# NOTE: this is additive — guitar/piano audio still remains inside the Synths stem
+# (from htdemucs_ft's "other"); it is not subtracted. Stems quieter than the
+# threshold are dropped (the song doesn't contain that part).
+guitar_separation:
+  enabled: true
+  model: htdemucs_6s.yaml
+  silence_threshold_db: -50
+
+# --- Stage 2C: drum-kit decomposition (run on the Drums stem) ------------------
+drum_kit:
+  enabled: true
+  method: model          # "model" (DrumSep ML) or "dsp" (CPU HPSS fallback)
+  model: auto            # DrumSep; "auto" discovers by drum keywords
+  depth: 5               # 4=kick/snare/toms/cymbals  5=+hihat  6=+ride/crash
+
+# --- Stage 2D: lead / backing vocal split (run on the Vocals stem) -------------
+vocal_split:
+  enabled: true
+  model: auto            # karaoke RoFormer/MDX -> lead vs backing
+  # NOTE: produces LeadVox + SUMMED BGV. Per-voice BGV isolation is not possible.
+
+# --- Performance-bus mapping (consumed by Stage 3) -----------------------------
+# Maps each separated role to the live track it feeds. Click / Drummer Click /
+# Cues are GENERATED from the tempo map (Stage 1), not separated.
+# Lead vocal is sung live, so the LeadVox stem is a guide/reference, not a bus.
+buses:
+  LeadVox:  { bus: "Lead Vox (guide)",       color: "#E8334A" }
+  BGV:      { bus: "BGV",                     color: "#F25C9C" }
+  Bass:     { bus: "Bass/Sub-Bass",           color: "#7A4FD6" }
+  Synths:   { bus: "Synths & Pads",           color: "#378ADD" }
+  Guitar:   { bus: "Guitar",                  color: "#E8A33D" }
+  Piano:    { bus: "Piano / Keys",            color: "#C77DFF" }
+  Drums:    { bus: "Loop & Percussion",       color: "#2EC4B6" }
+  Kick:     { bus: "Sample Trigger",          color: "#2E7CE8" }
+  Snare:    { bus: "Sample Trigger",          color: "#34B7E8" }
+  Toms:     { bus: "Sample Trigger",          color: "#1D9E75" }
+  HiHat:    { bus: "Sample Trigger",          color: "#9BD32E" }
+  Cymbals:  { bus: "Sample Trigger",          color: "#E8C72E" }
+  Ride:     { bus: "Sample Trigger",          color: "#E89F2E" }
+  Crash:    { bus: "Sample Trigger",          color: "#E8762E" }
+  Instrumental: { bus: "Instrumental (ref)",  color: "#5A6066" }
+
+# --- Stage 1: tempo / grid -----------------------------------------------------
+tempo:
+  method: librosa        # "librosa" (default) or "madmom" (better downbeats, heavier)
+  assume_time_signature: "4/4"
+  variance_warn_threshold: 0.08
+  manual_override:       # force a grid (gospel/worship rubato); null = auto-detect
+    bpm: null
+    first_downbeat_sec: null

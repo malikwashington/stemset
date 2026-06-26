@@ -1,0 +1,17 @@
+# Separation backend — install ONE (the pipeline auto-detects which):
+#   Apple Silicon, recommended (no torch/onnx at inference, fast on M1):
+#     pip install mlx-audio-separator
+#   Proven fallback (torch/onnx based, slower Demucs on Mac):
+#     pip install "audio-separator[cpu]"
+#
+# Glue deps (always):
+librosa>=0.10
+soundfile>=0.12
+PyYAML>=6.0
+numpy>=1.24
+#
+# Optional, better downbeats (heavier; needs cython):
+# madmom>=0.16
+#
+# System deps (Homebrew, not pip):
+#   brew install ffmpeg libsndfile
