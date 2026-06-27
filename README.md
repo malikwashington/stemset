@@ -6,7 +6,7 @@ separation recovers the parts, a tempo map aligns them to a grid, and the output
 exact mixer buses a live rig expects (Ableton → an SPD-SX Pro for playback).
 
 The design goal is **live reliability**, not a perfect studio remix: every stem lands on a known
-bus, on the grid, with a human ear-check gate before anything reaches a stage.
+bus, on the grid, with a human ear-check gate before anything reaches the performance stage.
 
 ## Pipeline
 
